@@ -1,0 +1,601 @@
+index.html
+
+<meta name="base:app_id" content="6971289988e3bac59cf3d247" />
+
+import React, { useState, useEffect } from 'react';
+import { TrendingUp, Users, Zap, Trophy, Clock, DollarSign, Share2, Plus, Heart, MessageCircle, Repeat2, BarChart3 } from 'lucide-react';
+
+const ProphetMarketsApp = () => {
+  const [activeTab, setActiveTab] = useState('markets');
+  const [connected, setConnected] = useState(false);
+  const [userAddress, setUserAddress] = useState('');
+  const [balance, setBalance] = useState(0);
+  const [twitterConnected, setTwitterConnected] = useState(false);
+  const [twitterHandle, setTwitterHandle] = useState('');
+  const [markets, setMarkets] = useState([
+    {
+      id: 1,
+      creator: '0x742d...3f9a',
+      creatorName: '@cryptowhale',
+      prediction: "My next tweet will get 10K-15K likes",
+      tweetUrl: "https://twitter.com/cryptowhale/status/123456",
+      deadline: new Date('2026-01-25'),
+      metric: 'likes',
+      rangeMin: 10000,
+      rangeMax: 15000,
+      currentValue: 8234,
+      yesPrice: 0.65,
+      noPrice: 0.35,
+      volume: 12500,
+      holders: 234,
+      status: 'active',
+      creatorFees: 625,
+      protocolFees: 625
+    },
+    {
+      id: 2,
+      creator: '0x8a3b...7c2d',
+      creatorName: '@aibuilder',
+      prediction: "This thread will reach 500-1000 comments in 48hrs",
+      tweetUrl: "https://twitter.com/aibuilder/status/789012",
+      deadline: new Date('2026-01-23'),
+      metric: 'comments',
+      rangeMin: 500,
+      rangeMax: 1000,
+      currentValue: 342,
+      yesPrice: 0.42,
+      noPrice: 0.58,
+      volume: 8300,
+      holders: 156,
+      status: 'active',
+      creatorFees: 415,
+      protocolFees: 415
+    },
+    {
+      id: 3,
+      creator: '0x1f5e...9b4a',
+      creatorName: '@viralking',
+      prediction: "My post will get 2K-5K retweets by tomorrow",
+      tweetUrl: "https://twitter.com/viralking/status/345678",
+      deadline: new Date('2026-01-22'),
+      metric: 'retweets',
+      rangeMin: 2000,
+      rangeMax: 5000,
+      currentValue: 1876,
+      yesPrice: 0.73,
+      noPrice: 0.27,
+      volume: 15800,
+      holders: 412,
+      status: 'active',
+      creatorFees: 790,
+      protocolFees: 790
+    }
+  ]);
+  const [myPositions, setMyPositions] = useState([
+    {
+      marketId: 1,
+      position: 'YES',
+      shares: 100,
+      avgPrice: 0.58,
+      currentValue: 65
+    }
+  ]);
+  const [newMarket, setNewMarket] = useState({
+    tweetUrl: '',
+    metric: 'likes',
+    rangeMin: '',
+    rangeMax: '',
+    deadline: '',
+    description: ''
+  });
+
+  const connectWallet = () => {
+    setConnected(true);
+    setUserAddress('0x1234...5678');
+    setBalance(1250.50);
+  };
+
+  const connectTwitter = () => {
+    setTwitterConnected(true);
+    setTwitterHandle('@yourhandle');
+    alert('Twitter connected! In production:\n1. OAuth flow to twitter.com\n2. Request read permissions\n3. Store access token securely\n4. Fetch real-time metrics via Twitter API v2');
+  };
+
+  const calculatePnL = (position) => {
+    const invested = position.shares * position.avgPrice;
+    const current = position.shares * position.currentValue / 100;
+    return ((current - invested) / invested * 100).toFixed(2);
+  };
+
+  const buyShares = (marketId, side, amount) => {
+    const feeAmount = (amount * 0.05).toFixed(2);
+    alert(`Buying ${amount} ${side} shares for Market #${marketId}\n\nAUTOMATIC MARKET MAKER (AMM) LOGIC:\n\n1. BONDING CURVE PRICING\n   - Price = shares / total_shares\n   - More buys = higher price\n   - Price always between $0-$1\n\n2. SELF-BALANCING\n   - YES + NO prices always = $1\n   - If YES goes up, NO goes down\n   - No manual intervention needed\n\n3. FEE DISTRIBUTION (10% total)\n   - 5% to creator: $${feeAmount}\n   - 5% to protocol: $${feeAmount}\n   - Fees taken from each trade\n\n4. SETTLEMENT\n   - On deadline, Twitter API checked\n   - If metric in range: YES = $1, NO = $0\n   - If metric outside range: YES = $0, NO = $1\n   - Winners redeem shares for $1 each`);
+  };
+
+  const createMarket = () => {
+    if (!newMarket.tweetUrl || !newMarket.rangeMin || !newMarket.rangeMax || !newMarket.deadline) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    if (!twitterConnected) {
+      alert('Please connect Twitter first to verify tweet ownership');
+      return;
+    }
+    
+    const market = {
+      id: markets.length + 1,
+      creator: userAddress,
+      creatorName: twitterHandle,
+      prediction: `This ${newMarket.metric === 'likes' ? 'post' : 'thread'} will get ${newMarket.rangeMin}-${newMarket.rangeMax} ${newMarket.metric}`,
+      tweetUrl: newMarket.tweetUrl,
+      deadline: new Date(newMarket.deadline),
+      metric: newMarket.metric,
+      rangeMin: parseInt(newMarket.rangeMin),
+      rangeMax: parseInt(newMarket.rangeMax),
+      currentValue: 0,
+      yesPrice: 0.5,
+      noPrice: 0.5,
+      volume: 0,
+      holders: 0,
+      status: 'active',
+      creatorFees: 0,
+      protocolFees: 0
+    };
+    
+    setMarkets([market, ...markets]);
+    setNewMarket({ tweetUrl: '', metric: 'likes', rangeMin: '', rangeMax: '', deadline: '', description: '' });
+    alert('Market created!\n\nIn production:\n1. Smart contract deployed on Base\n2. Twitter API webhook monitors metrics\n3. Auto-resolves when deadline hits\n4. Winners can claim payouts');
+  };
+
+  const daysUntil = (date) => {
+    const diff = date - new Date();
+    const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+    if (days < 0) return 'Ended';
+    if (days === 0) return 'Today';
+    if (days === 1) return '1 day';
+    return `${days} days`;
+  };
+
+  const getMetricIcon = (metric) => {
+    switch(metric) {
+      case 'likes': return Heart;
+      case 'comments': return MessageCircle;
+      case 'retweets': return Repeat2;
+      default: return BarChart3;
+    }
+  };
+
+  const getProgress = (current, min, max) => {
+    if (current >= max) return 100;
+    if (current <= min) return (current / min) * 50;
+    return 50 + ((current - min) / (max - min)) * 50;
+  };
+
+  return (
+    <div className="min-h-screen bg-white">
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+                <TrendingUp className="text-white" size={22} />
+              </div>
+              <h1 className="text-2xl font-semibold text-gray-900">
+                Prophet Markets
+              </h1>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              {!twitterConnected ? (
+                <button
+                  onClick={connectTwitter}
+                  className="bg-black text-white px-5 py-2.5 rounded-lg font-medium hover:bg-gray-800 transition flex items-center gap-2"
+                >
+                  <Share2 size={18} />
+                  Connect X
+                </button>
+              ) : (
+                <div className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium">
+                  {twitterHandle}
+                </div>
+              )}
+              
+              {!connected ? (
+                <button
+                  onClick={connectWallet}
+                  className="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-blue-700 transition"
+                >
+                  Connect wallet
+                </button>
+              ) : (
+                <div className="flex items-center gap-4">
+                  <div className="text-right">
+                    <div className="text-xs text-gray-500 font-medium">Balance</div>
+                    <div className="font-semibold text-gray-900">${balance.toFixed(2)}</div>
+                  </div>
+                  <div className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium">
+                    {userAddress}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="mb-8 bg-blue-50 border border-blue-200 p-5 rounded-xl">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+              <Zap className="text-white" size={20} />
+            </div>
+            <div className="flex-1">
+              <div className="font-semibold text-blue-900 mb-1">How it works</div>
+              <div className="text-sm text-blue-800">
+                Predict X (Twitter) engagement ranges. Markets automatically balance via bonding curves. 
+                <strong> 10% fee on all trades</strong> (5% to creator, 5% to protocol). 
+                Winners get $1 per share when predictions resolve via X API.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {connected && (
+          <div className="grid grid-cols-4 gap-4 mb-8">
+            {[
+              { label: 'Total volume', value: '$36.6K', icon: DollarSign },
+              { label: 'Active markets', value: markets.length, icon: TrendingUp },
+              { label: 'Total traders', value: '802', icon: Users },
+              { label: 'Your earnings', value: '$0.00', icon: Trophy }
+            ].map((stat, i) => (
+              <div key={i} className="bg-white border border-gray-200 rounded-2xl p-5">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center">
+                    <stat.icon className="text-blue-600" size={20} />
+                  </div>
+                </div>
+                <div className="text-2xl font-semibold text-gray-900 mb-1">{stat.value}</div>
+                <div className="text-sm text-gray-500">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="flex gap-1 mb-8 bg-gray-100 p-1 rounded-xl w-fit">
+          {[
+            { id: 'markets', label: 'Markets', icon: TrendingUp },
+            { id: 'positions', label: 'Positions', icon: Trophy },
+            { id: 'create', label: 'Create', icon: Plus }
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 px-6 py-2.5 font-medium rounded-lg transition ${
+                activeTab === tab.id
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <tab.icon size={18} />
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {activeTab === 'markets' && (
+          <div className="space-y-4">
+            {markets.map(market => {
+              const MetricIcon = getMetricIcon(market.metric);
+              const progress = getProgress(market.currentValue, market.rangeMin, market.rangeMax);
+              const isInRange = market.currentValue >= market.rangeMin && market.currentValue <= market.rangeMax;
+              
+              return (
+                <div key={market.id} className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-lg hover:border-gray-300 transition">
+                  <div className="flex items-start justify-between mb-5">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                          {market.creatorName[1].toUpperCase()}
+                        </div>
+                        <div>
+                          <div className="font-semibold text-gray-900">{market.creatorName}</div>
+                          <div className="text-xs text-gray-500">{market.creator}</div>
+                        </div>
+                      </div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-3">{market.prediction}</h3>
+                      
+                      <a 
+                        href={market.tweetUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 mb-4"
+                      >
+                        <Share2 size={14} />
+                        View on X
+                      </a>
+
+                      <div className="bg-gray-50 rounded-xl p-4 mb-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <MetricIcon size={18} className="text-gray-600" />
+                            <span className="text-sm font-semibold text-gray-900 capitalize">
+                              Current {market.metric}
+                            </span>
+                          </div>
+                          <div className={`text-lg font-bold ${isInRange ? 'text-green-600' : 'text-gray-900'}`}>
+                            {market.currentValue.toLocaleString()}
+                          </div>
+                        </div>
+                        <div className="relative h-2 bg-gray-200 rounded-full overflow-hidden">
+                          <div 
+                            className={`absolute left-0 top-0 h-full transition-all ${isInRange ? 'bg-green-500' : 'bg-blue-500'}`}
+                            style={{ width: `${Math.min(progress, 100)}%` }}
+                          />
+                        </div>
+                        <div className="flex justify-between text-xs text-gray-500 mt-1">
+                          <span>Target: {market.rangeMin.toLocaleString()}</span>
+                          <span>{market.rangeMax.toLocaleString()}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-5 text-sm text-gray-600">
+                        <span className="flex items-center gap-1.5">
+                          <Clock size={16} className="text-gray-400" />
+                          {daysUntil(market.deadline)}
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <Users size={16} className="text-gray-400" />
+                          {market.holders} traders
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <DollarSign size={16} className="text-gray-400" />
+                          ${market.volume.toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="bg-green-50 text-green-700 px-4 py-2 rounded-full text-sm font-semibold mb-2">
+                        Creator: ${market.creatorFees.toFixed(2)}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        Protocol: ${market.protocolFees.toFixed(2)}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 mb-5">
+                    <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                      <div className="text-xs font-medium text-gray-600 mb-1">YES (in range)</div>
+                      <div className="text-3xl font-semibold text-green-600 mb-1">${market.yesPrice.toFixed(2)}</div>
+                      <div className="text-xs text-gray-600">{(market.yesPrice * 100).toFixed(0)}% implied</div>
+                    </div>
+                    <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                      <div className="text-xs font-medium text-gray-600 mb-1">NO (out of range)</div>
+                      <div className="text-3xl font-semibold text-red-600 mb-1">${market.noPrice.toFixed(2)}</div>
+                      <div className="text-xs text-gray-600">{(market.noPrice * 100).toFixed(0)}% implied</div>
+                    </div>
+                  </div>
+
+                  {connected ? (
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => buyShares(market.id, 'YES', 10)}
+                        className="flex-1 bg-green-600 text-white py-3 rounded-xl font-semibold hover:bg-green-700 transition"
+                      >
+                        Buy YES
+                      </button>
+                      <button
+                        onClick={() => buyShares(market.id, 'NO', 10)}
+                        className="flex-1 bg-red-600 text-white py-3 rounded-xl font-semibold hover:bg-red-700 transition"
+                      >
+                        Buy NO
+                      </button>
+                      <button className="px-5 border-2 border-gray-200 rounded-xl hover:bg-gray-50 transition">
+                        <Share2 size={20} className="text-gray-600" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="text-center py-4 bg-gray-50 rounded-xl text-gray-600 text-sm font-medium">
+                      Connect wallet to trade
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {activeTab === 'positions' && (
+          <div className="bg-white border border-gray-200 rounded-2xl p-6">
+            {!connected ? (
+              <div className="text-center py-16 text-gray-500">
+                Connect your wallet to view positions
+              </div>
+            ) : myPositions.length === 0 ? (
+              <div className="text-center py-16 text-gray-500">
+                No positions yet. Start trading to see them here!
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {myPositions.map((pos, i) => {
+                  const market = markets.find(m => m.id === pos.marketId);
+                  const pnl = calculatePnL(pos);
+                  return (
+                    <div key={i} className="border border-gray-200 rounded-xl p-5">
+                      <div className="font-semibold text-gray-900 mb-4">{market.prediction}</div>
+                      <div className="grid grid-cols-4 gap-4 text-sm">
+                        <div>
+                          <div className="text-gray-500 mb-1 font-medium">Position</div>
+                          <div className={`font-semibold ${pos.position === 'YES' ? 'text-green-600' : 'text-red-600'}`}>
+                            {pos.shares} {pos.position}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-gray-500 mb-1 font-medium">Avg price</div>
+                          <div className="font-semibold text-gray-900">${pos.avgPrice.toFixed(2)}</div>
+                        </div>
+                        <div>
+                          <div className="text-gray-500 mb-1 font-medium">Current value</div>
+                          <div className="font-semibold text-gray-900">${pos.currentValue.toFixed(2)}</div>
+                        </div>
+                        <div>
+                          <div className="text-gray-500 mb-1 font-medium">P&L</div>
+                          <div className={`font-semibold ${parseFloat(pnl) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {parseFloat(pnl) >= 0 ? '+' : ''}{pnl}%
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'create' && (
+          <div className="bg-white border border-gray-200 rounded-2xl p-8">
+            {!connected ? (
+              <div className="text-center py-16 text-gray-500">
+                Connect your wallet to create markets
+              </div>
+            ) : !twitterConnected ? (
+              <div className="text-center py-16">
+                <div className="text-gray-500 mb-4">Connect X to create prediction markets</div>
+                <button
+                  onClick={connectTwitter}
+                  className="bg-black text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-800 transition inline-flex items-center gap-2"
+                >
+                  <Share2 size={18} />
+                  Connect X Account
+                </button>
+              </div>
+            ) : (
+              <div className="max-w-2xl mx-auto">
+                <h2 className="text-2xl font-semibold text-gray-900 mb-2">Create prediction market</h2>
+                <p className="text-gray-600 mb-8">Predict your X post engagement and earn 5% of all trades</p>
+                
+                <div className="space-y-5">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">X Post URL</label>
+                    <input
+                      type="text"
+                      placeholder="https://twitter.com/yourhandle/status/123456789"
+                      value={newMarket.tweetUrl}
+                      onChange={(e) => setNewMarket({...newMarket, tweetUrl: e.target.value})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-gray-900"
+                    />
+                    <div className="text-xs text-gray-500 mt-1">Must be your own post (verified via X API)</div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">Metric to predict</label>
+                    <select
+                      value={newMarket.metric}
+                      onChange={(e) => setNewMarket({...newMarket, metric: e.target.value})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-gray-900"
+                    >
+                      <option value="likes">Likes</option>
+                      <option value="comments">Comments</option>
+                      <option value="retweets">Retweets</option>
+                    </select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-900 mb-2">Minimum range</label>
+                      <input
+                        type="number"
+                        placeholder="e.g., 1000"
+                        value={newMarket.rangeMin}
+                        onChange={(e) => setNewMarket({...newMarket, rangeMin: e.target.value})}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-gray-900"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-900 mb-2">Maximum range</label>
+                      <input
+                        type="number"
+                        placeholder="e.g., 5000"
+                        value={newMarket.rangeMax}
+                        onChange={(e) => setNewMarket({...newMarket, rangeMax: e.target.value})}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-gray-900"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">Deadline</label>
+                    <input
+                      type="datetime-local"
+                      value={newMarket.deadline}
+                      onChange={(e) => setNewMarket({...newMarket, deadline: e.target.value})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-gray-900"
+                    />
+                  </div>
+
+                  <div className="bg-blue-50 border border-blue-200 p-5 rounded-xl">
+                    <div className="font-semibold text-blue-900 mb-2">How you earn</div>
+                    <div className="text-sm text-blue-800">
+                      <strong>10% fee on all trades:</strong> You get 5%, protocol gets 5%. 
+                      X API auto-resolves your market when the deadline hits. More traders = more fees for you!
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={createMarket}
+                    className="w-full bg-blue-600 text-white py-3.5 rounded-xl font-semibold hover:bg-blue-700 transition"
+                  >
+                    Create market
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="max-w-7xl mx-auto px-6 py-8 mt-12 border-t border-gray-200">
+        <div className="bg-gray-50 rounded-xl p-6 mb-6">
+          <h3 className="font-semibold text-gray-900 mb-4">How Prediction Markets Self-Balance (AMM Logic)</h3>
+          <div className="grid md:grid-cols-2 gap-6 text-sm">
+            <div>
+              <div className="font-semibold text-gray-900 mb-2">1. Constant Product Formula</div>
+              <div className="text-gray-700 mb-3">
+                YES shares × NO shares = constant. When someone buys YES, price goes up and NO goes down automatically. 
+                Prices always sum to $1.00 (e.g., YES $0.65 + NO $0.35 = $1.00).
+              </div>
+              
+              <div className="font-semibold text-gray-900 mb-2">2. No Central Authority Needed</div>
+              <div className="text-gray-700">
+                Smart contract enforces the math. No human sets prices. Market finds equilibrium based on trader sentiment.
+              </div>
+            </div>
+            
+            <div>
+              <div className="font-semibold text-gray-900 mb-2">3. Auto-Resolution via X API</div>
+              <div className="text-gray-700 mb-3">
+                On deadline, backend fetches real metrics from X API (v2). If actual value falls in predicted range, YES = $1, NO = $0. 
+                If outside range, YES = $0, NO = $1.
+              </div>
+              
+              <div className="font-semibold text-gray-900 mb-2">4. Fee Distribution (10% total)</div>
+              <div className="text-gray-700">
+                Every trade: 5% to creator, 5% to protocol. Fees deducted automatically by smart contract. 
+                No manual intervention required.
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div className="text-center text-sm text-gray-500">
+          <div className="mb-2 font-medium">Prophet Markets • Built on Base</div>
+          <div className="text-xs">Demo app - Production requires smart contracts and backend infrastructure</div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ProphetMarketsApp;
